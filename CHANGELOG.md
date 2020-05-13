@@ -1,3 +1,8 @@
+## 1.15.0
+
+* Add a large number of extension methods on [Iterable] and [List] types,
+  and on a number of other types.
+
 ## 1.14.13-dev
 
 * Deprecate `mapMap`. The Map interface has a `map` call and map literals can

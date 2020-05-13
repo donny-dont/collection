@@ -154,58 +154,106 @@ void main() {
     expect(lowerBound(l2, C(5), compare: compareC), equals(1));
   });
 
-  test('insertionSortRandom', () {
-    var random = Random();
-    for (var i = 0; i < 25; i++) {
-      var list = [
-        for (var j = 0; j < i; j++)
-          random.nextInt(25) // Expect some equal elements.
-      ];
-      insertionSort(list);
-      for (var j = 1; j < i; j++) {
-        expect(list[j - 1], lessThanOrEqualTo(list[j]));
+ void testSort(String name, void sort(List<int> elements, [int start, int end])) {
+    test('${name}Random', () {
+      var random = Random();
+      for (var i = 0; i < 250; i += 10) {
+        var list = [
+          for (var j = 0; j < i; j++)
+            random.nextInt(25) // Expect some equal elements.
+        ];
+        sort(list);
+        for (var j = 1; j < i; j++) {
+          expect(list[j - 1], lessThanOrEqualTo(list[j]));
+        }
       }
-    }
+    });
+
+    test('${name}SubRanges', () {
+      var l = [6, 5, 4, 3, 2, 1];
+      sort(l, 2, 4);
+      expect(l, equals([6, 5, 3, 4, 2, 1]));
+      sort(l, 1, 1);
+      expect(l, equals([6, 5, 3, 4, 2, 1]));
+      sort(l, 4, 6);
+      expect(l, equals([6, 5, 3, 4, 1, 2]));
+      sort(l, 0, 2);
+      expect(l, equals([5, 6, 3, 4, 1, 2]));
+      sort(l, 0, 6);
+      expect(l, equals([1, 2, 3, 4, 5, 6]));
+    });
+
+    test('$name insertionSortSpecialCases', () {
+      var l = [6, 6, 6, 6, 6, 6];
+      sort(l);
+      expect(l, equals([6, 6, 6, 6, 6, 6]));
+
+      l = [6, 6, 3, 3, 0, 0];
+      sort(l);
+      expect(l, equals([0, 0, 3, 3, 6, 6]));
+    });
+  }
+  int intId(int x) => x;
+  int intCompare(int a, int b) => a - b;
+  testSort("insertionSort", (list, [start, end]) {
+    insertionSortBy(list, intId, intCompare, start ?? 0, end ?? list.length);
   });
-
-  test('insertionSortSubRanges', () {
-    var l = [6, 5, 4, 3, 2, 1];
-    insertionSort(l, start: 2, end: 4);
-    expect(l, equals([6, 5, 3, 4, 2, 1]));
-    insertionSort(l, start: 1, end: 1);
-    expect(l, equals([6, 5, 3, 4, 2, 1]));
-    insertionSort(l, start: 4, end: 6);
-    expect(l, equals([6, 5, 3, 4, 1, 2]));
-    insertionSort(l, start: 0, end: 2);
-    expect(l, equals([5, 6, 3, 4, 1, 2]));
-    insertionSort(l, start: 0, end: 6);
-    expect(l, equals([1, 2, 3, 4, 5, 6]));
+  testSort("mergeSort compare", (list, [start, end]) {
+    mergeSort(list, start: start ?? 0, end: end ?? list.length, compare: intCompare);
   });
-
-  test('insertionSortSpecialCases', () {
-    var l = [6, 6, 6, 6, 6, 6];
-    insertionSort(l);
-    expect(l, equals([6, 6, 6, 6, 6, 6]));
-
-    l = [6, 6, 3, 3, 0, 0];
-    insertionSort(l);
-    expect(l, equals([0, 0, 3, 3, 6, 6]));
+  testSort("mergeSort comparable", (list, [start, end]) {
+    mergeSort(list, start: start ?? 0, end: end ?? list.length);
   });
-
-  test('MergeSortRandom', () {
-    var random = Random();
-    for (var i = 0; i < 250; i += 1) {
-      var list = [
-        for (var j = 0; j < i; j++)
-          random.nextInt(i) // Expect some equal elements.
-      ];
+  testSort("mergeSortBy", (list, [start, end]) {
+    mergeSortBy(list, intId, intCompare, start ?? 0, end ?? list.length);
+  });
+  testSort("quickSort", (list, [start, end]) {
+    quickSort(list, intCompare, start ?? 0, end ?? list.length);
+  });
+  testSort("quickSortBy", (list, [start, end]) {
+    quickSortBy(list, intId, intCompare, start ?? 0, end ?? list.length);
+  });
+  test('MergeSortSpecialCases', () {
+    for (var size in [511, 512, 513]) {
+      // All equal.
+      var list = List<OC>.generate(size, (i) => OC(0, i));
       mergeSort(list);
-      for (var j = 1; j < i; j++) {
-        expect(list[j - 1], lessThanOrEqualTo(list[j]));
+      for (var i = 0; i < size; i++) {
+        expect(list[i].order, equals(i));
+      }
+      // All but one equal, first.
+      list[0] = OC(1, 0);
+      for (var i = 1; i < size; i++) {
+        list[i] = OC(0, i);
+      }
+      mergeSort(list);
+      for (var i = 0; i < size - 1; i++) {
+        expect(list[i].order, equals(i + 1));
+      }
+      expect(list[size - 1].order, equals(0));
+
+      // All but one equal, last.
+      for (var i = 0; i < size - 1; i++) {
+        list[i] = OC(0, i);
+      }
+      list[size - 1] = OC(-1, size - 1);
+      mergeSort(list);
+      expect(list[0].order, equals(size - 1));
+      for (var i = 1; i < size; i++) {
+        expect(list[i].order, equals(i - 1));
+      }
+
+      // Reversed.
+      for (var i = 0; i < size; i++) {
+        list[i] = OC(size - 1 - i, i);
+      }
+      mergeSort(list);
+      for (var i = 0; i < size; i++) {
+        expect(list[i].id, equals(i));
+        expect(list[i].order, equals(size - 1 - i));
       }
     }
   });
-
   test('MergeSortPreservesOrder', () {
     var random = Random();
     // Small case where only insertion call is called,
@@ -248,48 +296,6 @@ void main() {
       // and the parts after max, didn't change at all.
       expect(list.sublist(0, min), equals(copy.sublist(0, min)));
       expect(list.sublist(max), equals(copy.sublist(max)));
-    }
-  });
-
-  test('MergeSortSpecialCases', () {
-    for (var size in [511, 512, 513]) {
-      // All equal.
-      var list = [for (var i = 0; i < size; i++) OC(0, i)];
-      mergeSort(list);
-      for (var i = 0; i < size; i++) {
-        expect(list[i].order, equals(i));
-      }
-      // All but one equal, first.
-      list[0] = OC(1, 0);
-      for (var i = 1; i < size; i++) {
-        list[i] = OC(0, i);
-      }
-      mergeSort(list);
-      for (var i = 0; i < size - 1; i++) {
-        expect(list[i].order, equals(i + 1));
-      }
-      expect(list[size - 1].order, equals(0));
-
-      // All but one equal, last.
-      for (var i = 0; i < size - 1; i++) {
-        list[i] = OC(0, i);
-      }
-      list[size - 1] = OC(-1, size - 1);
-      mergeSort(list);
-      expect(list[0].order, equals(size - 1));
-      for (var i = 1; i < size; i++) {
-        expect(list[i].order, equals(i - 1));
-      }
-
-      // Reversed.
-      for (var i = 0; i < size; i++) {
-        list[i] = OC(size - 1 - i, i);
-      }
-      mergeSort(list);
-      for (var i = 0; i < size; i++) {
-        expect(list[i].id, equals(i));
-        expect(list[i].order, equals(size - 1 - i));
-      }
     }
   });
 
