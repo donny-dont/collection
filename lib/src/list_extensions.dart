@@ -38,7 +38,7 @@ extension ListExtensions<E> on List<E> {
   }
 
   /// Expands each element and index to a number of elements in a new iterable.
-  Iterable<R> expendIndexed<R>(Iterable<R> expend(int index, E element)) sync* {
+  Iterable<R> expandIndexed<R>(Iterable<R> expend(int index, E element)) sync* {
     var index = 0;
     for (var element in this) {
       yield* expend(index++, element);
