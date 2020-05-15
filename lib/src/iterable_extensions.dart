@@ -2,29 +2,31 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-// Extension methods on iterables.
-
 import 'package:collection/src/utils.dart';
 
-import "algorithms.dart";
+import 'algorithms.dart';
 
 /// Extensions that apply to all iterables.
+///
+/// More specialized extension methods that only apply to
+/// iterables with specific element types include:
+/// [IterableComparableExtension] and [IterableNullableExtension].
 extension IterableExtension<T> on Iterable<T> {
-
   /// The elements that do not satisfy [test].
-  Iterable<T> whereNot(bool test(T element)) =>
+  Iterable<T> whereNot(bool Function(T element) test) =>
       where((element) => !test(element));
 
   /// Creates a sorted list of the elements of the iterable.
   ///
   /// The elements are ordered by the [compare] [Comparator].
-  List<T> sorted(int compare(T a, T b)) => [...this]..sort(compare);
+  List<T> sorted(int Function(T a, T b) compare) => [...this]..sort(compare);
 
   /// Creates a sorted list of the elements of the iterable.
   ///
   /// The elements are ordered by the [compare] [Comparator] of the
   /// property [keyOf] of the element.
-  List<T> sortedCompareBy<K>(K keyOf(T element), int compare(K a, K b),
+  List<T> sortedCompareBy<K>(
+      K Function(T element) keyOf, int Function(K a, K b) compare,
       [int start = 0, int end]) {
     var elements = [...this];
     quickSortBy<T, K>(elements, keyOf, compare, start, end);
@@ -35,15 +37,15 @@ extension IterableExtension<T> on Iterable<T> {
   ///
   /// The elements are ordered by the natural ordering of the
   /// property [keyOf] of the element.
-  List<T> sortedBy<K extends Comparable<K>>(K keyOf(T element),
+  List<T> sortedBy<K extends Comparable<K>>(K Function(T element) keyOf,
       [int start = 0, int end]) {
     var elements = [...this];
-    quickSortBy<T, K>(elements, keyOf, defaultCompare<K>(), start, end);
+    quickSortBy<T, K>(elements, keyOf, compareComparable, start, end);
     return elements;
   }
 
   /// Whether the elements are sorted by the [compare] ordering.
-  bool isSorted(int compare(T a, T b)) {
+  bool isSorted(int Function(T a, T b) compare) {
     var iterator = this.iterator;
     if (!iterator.moveNext()) return true;
     var previousElement = iterator.current;
@@ -56,7 +58,8 @@ extension IterableExtension<T> on Iterable<T> {
   }
 
   /// Whether the elements are sorted by the [compare] ordering of [keyOf].
-  bool isSortedBy<K>(K keyOf(T element), int compare(K a, K b)) {
+  bool isSortedBy<K>(
+      K Function(T element) keyOf, int Function(K a, K b) compare) {
     var iterator = this.iterator;
     if (!iterator.moveNext()) return true;
     var previousKey = keyOf(iterator.current);
@@ -68,19 +71,11 @@ extension IterableExtension<T> on Iterable<T> {
     return true;
   }
 
-  /// The elements of this iterable with duplicates removed.
-  Iterable<T> unique() sync* {
-    var seen = <T>{};
-    for (var element in this) {
-      if (seen.add(element)) yield element;
-    }
-  }
-
   /// Takes an action for each element.
   ///
   /// Calls [action] for each element along with the index in the
   /// iteration order.
-  void forEachIndexed(void action(int index, T element)) {
+  void forEachIndexed(void Function(int index, T element) action) {
     var index = 0;
     for (var element in this) {
       action(index++, element);
@@ -88,7 +83,7 @@ extension IterableExtension<T> on Iterable<T> {
   }
 
   /// Maps each element and its index to a new value.
-  Iterable<R> mapIndexed<R>(R convert(int index, T element)) sync* {
+  Iterable<R> mapIndexed<R>(R Function(int index, T element) convert) sync* {
     var index = 0;
     for (var element in this) {
       yield convert(index++, element);
@@ -96,7 +91,7 @@ extension IterableExtension<T> on Iterable<T> {
   }
 
   /// Filters the elements on their value and index.
-  Iterable<T> whereIndexed(bool test(int index, T element)) sync* {
+  Iterable<T> whereIndexed(bool Function(int index, T element) test) sync* {
     var index = 0;
     for (var element in this) {
       if (test(index++, element)) yield element;
@@ -104,7 +99,8 @@ extension IterableExtension<T> on Iterable<T> {
   }
 
   /// Expands each element and index to a number of elements in a new iterable.
-  Iterable<R> expendIndexed<R>(Iterable<R> expend(int index, T element)) sync* {
+  Iterable<R> expendIndexed<R>(
+      Iterable<R> Function(int index, T element) expend) sync* {
     var index = 0;
     for (var element in this) {
       yield* expend(index++, element);
@@ -112,7 +108,7 @@ extension IterableExtension<T> on Iterable<T> {
   }
 
   /// The first element satisfying [test], or `null` if there are none.
-  T /*?*/ firstWhereOrNull(bool test(T element)) {
+  T /*?*/ firstWhereOrNull(bool Function(T element) test) {
     for (var element in this) {
       if (test(element)) return element;
     }
@@ -127,7 +123,7 @@ extension IterableExtension<T> on Iterable<T> {
   }
 
   /// The last element satisfying [test], or `null` if there are none.
-  T /*?*/ lastWhereOrNull(bool test(T element)) {
+  T /*?*/ lastWhereOrNull(bool Function(T element) test) {
     T /*?*/ result;
     for (var element in this) {
       if (test(element)) result = element;
@@ -145,7 +141,7 @@ extension IterableExtension<T> on Iterable<T> {
   ///
   /// Returns `null` if there are either no elements
   /// or more than one element satisfying [test].
-  T /*?*/ singleWhereOrNull(bool test(T element)) {
+  T /*?*/ singleWhereOrNull(bool Function(T element) test) {
     T /*?*/ result;
     var found = false;
     for (var element in this) {
@@ -189,8 +185,8 @@ extension IterableExtension<T> on Iterable<T> {
   /// iterable.groupFoldBy(keyOf,
   ///     (Set<T>? previous, T element) => (previous ?? <T>{})..add(element));
   /// ````
-  Map<K, G> groupFoldBy<K, G>(
-      K keyOf(T element), G combine(G /*?*/ previous, T element)) {
+  Map<K, G> groupFoldBy<K, G>(K Function(T element) keyOf,
+      G Function(G /*?*/ previous, T element) combine) {
     var result = <K, G>{};
     for (var element in this) {
       var key = keyOf(element);
@@ -200,7 +196,7 @@ extension IterableExtension<T> on Iterable<T> {
   }
 
   /// Groups elements into sets by [keyOf].
-  Map<K, Set<T>> groupSetsBy<K>(K keyOf(T element)) {
+  Map<K, Set<T>> groupSetsBy<K>(K Function(T element) keyOf) {
     var result = <K, Set<T>>{};
     for (var element in this) {
       var key = keyOf(element);
@@ -210,7 +206,7 @@ extension IterableExtension<T> on Iterable<T> {
   }
 
   /// Groups elements into lists by [keyOf].
-  Map<K, List<T>> groupListsBy<K>(K keyOf(T element)) {
+  Map<K, List<T>> groupListsBy<K>(K Function(T element) keyOf) {
     var result = <K, List<T>>{};
     for (var element in this) {
       var key = keyOf(element);
@@ -233,7 +229,7 @@ extension IterableExtension<T> on Iterable<T> {
   /// var parts = [1, 2, 3, 4, 5, 6, 7, 8, 9].split(isPrime);
   /// print(parts); // ([1], [2], [3, 4], [5, 6], [7, 8, 9])
   /// ```
-  Iterable<List<T>> splitBefore(bool test(T element)) =>
+  Iterable<List<T>> splitBefore(bool Function(T element) test) =>
       splitBeforeIndexed((_, element) => test(element));
 
   /// Splits the elements into chunks before some elements.
@@ -248,7 +244,7 @@ extension IterableExtension<T> on Iterable<T> {
   /// var parts = [1, 0, 2, 1, 5, 7, 6, 8, 9].splitAfter(isPrime);
   /// print(parts); // ([1, 0, 2], [1, 5], [7], [6, 8, 9])
   /// ```
-  Iterable<List<T>> splitAfter(bool test(T element)) =>
+  Iterable<List<T>> splitAfter(bool Function(T element) test) =>
       splitAfterIndexed((_, element) => test(element));
 
   /// Splits the elements into chunks between some elements.
@@ -264,7 +260,7 @@ extension IterableExtension<T> on Iterable<T> {
   /// var parts = [1, 0, 2, 1, 5, 7, 6, 8, 9].splitBetween((i, v1, v2) => v1 > v2);
   /// print(parts); // ([1], [0, 2], [1, 5, 7], [6, 8, 9])
   /// ```
-  Iterable<List<T>> splitBetween(bool test(T first, T second)) =>
+  Iterable<List<T>> splitBetween(bool Function(T first, T second) test) =>
       splitBetweenIndexed((_, first, second) => test(first, second));
 
   /// Splits the elements into chunks before some elements and indices.
@@ -281,7 +277,8 @@ extension IterableExtension<T> on Iterable<T> {
   ///     .splitBeforeIndexed((i, v) => i < v);
   /// print(parts); // ([1], [0, 2], [1, 5, 7], [6, 8, 9])
   /// ```
-  Iterable<List<T>> splitBeforeIndexed(bool test(int index, T element)) sync* {
+  Iterable<List<T>> splitBeforeIndexed(
+      bool Function(int index, T element) test) sync* {
     var iterator = this.iterator;
     if (!iterator.moveNext()) {
       return;
@@ -312,7 +309,8 @@ extension IterableExtension<T> on Iterable<T> {
   /// var parts = [1, 0, 2, 1, 5, 7, 6, 8, 9].splitAfterIndexed((i, v) => i < v);
   /// print(parts); // ([1, 0], [2, 1], [5, 7, 6], [8, 9])
   /// ```
-  Iterable<List<T>> splitAfterIndexed(bool test(int index, T element)) sync* {
+  Iterable<List<T>> splitAfterIndexed(
+      bool Function(int index, T element) test) sync* {
     var index = 0;
     List<T> chunk;
     for (var element in this) {
@@ -339,7 +337,7 @@ extension IterableExtension<T> on Iterable<T> {
   /// print(parts); // ([1], [0, 2], [1, 5, 7], [6, 8, 9])
   /// ```
   Iterable<List<T>> splitBetweenIndexed(
-      bool test(int index, T first, T second)) sync* {
+      bool Function(int index, T first, T second) test) sync* {
     var iterator = this.iterator;
     if (!iterator.moveNext()) return;
     var previous = iterator.current;
@@ -355,6 +353,20 @@ extension IterableExtension<T> on Iterable<T> {
       previous = element;
     }
     yield chunk;
+  }
+
+  /// Whether no element satisfies [test].
+  ///
+  /// Returns true if no element satisfies [test],
+  /// and false if at least one does.
+  ///
+  /// Equivalent to `iterable.every((x) => !test(x))` or
+  /// `!iterable.any(test)`.
+  bool none(bool Function(T) test) {
+    for (var element in this) {
+      if (test(element)) return false;
+    }
+    return true;
   }
 }
 
@@ -437,7 +449,7 @@ extension IterableComparableExtension<T extends Comparable<T>> on Iterable<T> {
       }
       return value;
     }
-    throw StateError("No element");
+    throw StateError('No element');
   }
 
   /// A maximal element of the iterable, or `null` if the iterable is empty.
@@ -471,17 +483,17 @@ extension IterableComparableExtension<T extends Comparable<T>> on Iterable<T> {
       }
       return value;
     }
-    throw StateError("No element");
+    throw StateError('No element');
   }
 
   /// Creates a sorted list of the elements of the iterable.
   ///
   /// If the [compare] function is not supplied, the sorting uses the
   /// natural [Comparable] ordering of the elements.
-  List<T> sorted([int compare(T a, T b)]) => [...this]..sort(compare);
+  List<T> sorted([int Function(T a, T b) compare]) => [...this]..sort(compare);
 
-    /// Whether the elements are sorted by the [compare] ordering.
-  bool isSorted([int compare(T a, T b)]) {
+  /// Whether the elements are sorted by the [compare] ordering.
+  bool isSorted([int Function(T a, T b) compare]) {
     if (compare != null) {
       return IterableExtension(this).isSorted(compare);
     }
@@ -512,8 +524,8 @@ extension ComparatorExtension<T> on Comparator<T> {
   /// this comparator, except that when two elements are considered
   /// equal, the [tieBreaker] comparator is used instead.
   Comparator<T> then(Comparator<T> tieBreaker) => (T a, T b) {
-    var result = this(a, b);
-    if (result == 0) result = tieBreaker(a, b);
-    return result;
-  };
+        var result = this(a, b);
+        if (result == 0) result = tieBreaker(a, b);
+        return result;
+      };
 }

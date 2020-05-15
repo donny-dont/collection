@@ -19,9 +19,10 @@ import 'utils.dart';
 /// (`CastError` on some SDK versions).
 ///
 /// Returns -1 if [value] is not in the list by default.
-int binarySearch<E>(List<E> sortedList, E value, {int Function(E, E) compare}) =>
-    binarySearchBy<E, E>(sortedList, _id, compare ?? defaultCompare<E>(), value);
-
+int binarySearch<E>(List<E> sortedList, E value,
+        {int Function(E, E) compare}) =>
+    binarySearchBy<E, E>(
+        sortedList, identity, compare ?? defaultCompare<E>(), value);
 
 /// Returns a position of the [value] in [sortedList], if it is there.
 ///
@@ -29,9 +30,15 @@ int binarySearch<E>(List<E> sortedList, E value, {int Function(E, E) compare}) =
 /// property of the elements, the result is unpredictable.
 ///
 /// Returns -1 if [value] is not in the list by default.
-int binarySearchBy<E, K>(List<E> sortedList, K keyOf(E element), int Function(K, K) compare, E value) {
-  var min = 0;
-  var max = sortedList.length;
+///
+/// If [start] and [end] are supplied, only that range is searched,
+/// and only that range need to be sorted.
+int binarySearchBy<E, K>(List<E> sortedList, K Function(E element) keyOf,
+    int Function(K, K) compare, E value,
+    [int start = 0, int end]) {
+  end = RangeError.checkValidRange(start, end, sortedList.length);
+  var min = start;
+  var max = end;
   var key = keyOf(value);
   while (min < max) {
     var mid = min + ((max - min) >> 1);
@@ -59,9 +66,9 @@ int binarySearchBy<E, K>(List<E> sortedList, K keyOf(E element), int Function(K,
 ///
 /// Returns [sortedList.length] if all the items in [sortedList] compare less
 /// than [value].
-int lowerBound<E>(List<E> sortedList, E value, {int Function(E, E) compare}) {
-  return lowerBoundBy<E, E>(sortedList, _id, compare ?? defaultCompare<E>(), value);
-}
+int lowerBound<E>(List<E> sortedList, E value, {int Function(E, E) compare}) =>
+    lowerBoundBy<E, E>(
+        sortedList, identity, compare ?? defaultCompare<E>(), value);
 
 /// Returns the first position in [sortedList] that is not before [value].
 ///
@@ -70,9 +77,15 @@ int lowerBound<E>(List<E> sortedList, E value, {int Function(E, E) compare}) {
 /// If the list isn't sorted according to this order, the result is unpredictable.
 ///
 /// Returns [sortedList.length] if all the items in [sortedList] are before [value].
-int lowerBoundBy<E, K>(List<E> sortedList, K keyOf(E element), int Function(K, K) compare, E value) {
-  var min = 0;
-  var max = sortedList.length;
+///
+/// If [start] and [end] are supplied, only that range is searched,
+/// and only that range need to be sorted.
+int lowerBoundBy<E, K>(List<E> sortedList, K Function(E element) keyOf,
+    int Function(K, K) compare, E value,
+    [int start = 0, int end]) {
+  end = RangeError.checkValidRange(start, end, sortedList.length);
+  var min = start;
+  var max = end;
   var key = keyOf(value);
   while (min < max) {
     var mid = min + ((max - min) >> 1);
@@ -166,9 +179,11 @@ void insertionSort<E>(List<E> elements,
 
 /// Generalized insertion sort.
 ///
-/// Performs insertion sort on the [list] range from [start] to [end].
+/// Performs insertion sort on the [elements] range from [start] to [end].
 /// Ordering is the [compare] of the [keyOf] of the elements.
-void insertionSortBy<E, K>(List<E> elements, K keyOf(E element), int compare(K a, K b), [int start = 0, int end]) {
+void insertionSortBy<E, K>(List<E> elements, K Function(E element) keyOf,
+    int Function(K a, K b) compare,
+    [int start = 0, int end]) {
   end = RangeError.checkValidRange(start, end, elements.length);
   _movingInsertionSort(elements, keyOf, compare, start, end, elements, start);
 }
@@ -214,15 +229,25 @@ void mergeSort<E>(List<E> elements,
   var secondLength = end - middle;
   // secondLength is always the same as firstLength, or one greater.
   var scratchSpace = List<E>.filled(secondLength, elements[start]);
-  E Function(E) id = _id; // ignore: omit_local_variable_types
+  E Function(E) id = identity; // ignore: omit_local_variable_types
   _mergeSort(elements, id, compare, middle, end, scratchSpace, 0);
   var firstTarget = end - firstLength;
   _mergeSort(elements, id, compare, start, middle, elements, firstTarget);
-  _merge(id, compare, elements, firstTarget, end, scratchSpace, 0, secondLength, elements,
-      start);
+  _merge(id, compare, elements, firstTarget, end, scratchSpace, 0, secondLength,
+      elements, start);
 }
 
-void mergeSortBy<E, K>(List<E> elements, K keyOf(E element), int compare(K a, K b), [int start = 0, int end]) {
+/// Sort [elements] using a merge-sort algorithm.
+///
+/// The elements are compared using [compare] on the value provided by [keyOf]
+/// on the element.
+/// If [start] and [end] are provided, only that range is sorted.
+///
+/// Uses [insertionSortBy] for smaller sublists.
+void mergeSortBy<E, K>(List<E> elements, K Function(E element) keyOf,
+    int Function(K a, K b) compare,
+    [int start = 0, int end]) {
+  end = RangeError.checkValidRange(start, end, elements.length);
   var length = end - start;
   if (length < 2) return;
   if (length < _mergeSortLimit) {
@@ -243,16 +268,22 @@ void mergeSortBy<E, K>(List<E> elements, K keyOf(E element), int compare(K a, K 
   _mergeSort(elements, keyOf, compare, middle, end, scratchSpace, 0);
   var firstTarget = end - firstLength;
   _mergeSort(elements, keyOf, compare, start, middle, elements, firstTarget);
-  _merge(keyOf, compare, elements, firstTarget, end, scratchSpace, 0, secondLength, elements,
-      start);
+  _merge(keyOf, compare, elements, firstTarget, end, scratchSpace, 0,
+      secondLength, elements, start);
 }
 
 /// Performs an insertion sort into a potentially different list than the
 /// one containing the original values.
 ///
 /// It will work in-place as well.
-void _movingInsertionSort<E, K>(List<E> list, K keyOf(E element), int Function(K, K) compare,
-    int start, int end, List<E> target, int targetOffset) {
+void _movingInsertionSort<E, K>(
+    List<E> list,
+    K Function(E element) keyOf,
+    int Function(K, K) compare,
+    int start,
+    int end,
+    List<E> target,
+    int targetOffset) {
   var length = end - start;
   if (length == 0) return;
   target[targetOffset] = list[start];
@@ -274,18 +305,25 @@ void _movingInsertionSort<E, K>(List<E> list, K keyOf(E element), int Function(K
   }
 }
 
-/// Sorts [list] from [start] to [end] into [target] at [targetOffset].
+/// Sorts [elements] from [start] to [end] into [target] at [targetOffset].
 ///
 /// The `target` list must be able to contain the range from `start` to `end`
 /// after `targetOffset`.
 ///
-/// Allows target to be the same list as [list], as long as it's not
+/// Allows target to be the same list as [elements], as long as it's not
 /// overlapping the `start..end` range.
-void _mergeSort<E, K>(List<E> list, K keyOf(E element), int Function(K, K) compare, int start, int end,
-    List<E> target, int targetOffset) {
+void _mergeSort<E, K>(
+    List<E> elements,
+    K Function(E element) keyOf,
+    int Function(K, K) compare,
+    int start,
+    int end,
+    List<E> target,
+    int targetOffset) {
   var length = end - start;
   if (length < _mergeSortLimit) {
-    _movingInsertionSort<E, K>(list, keyOf, compare, start, end, target, targetOffset);
+    _movingInsertionSort<E, K>(
+        elements, keyOf, compare, start, end, target, targetOffset);
     return;
   }
   var middle = start + (length >> 1);
@@ -294,12 +332,12 @@ void _mergeSort<E, K>(List<E> list, K keyOf(E element), int Function(K, K) compa
   // Here secondLength >= firstLength (differs by at most one).
   var targetMiddle = targetOffset + firstLength;
   // Sort the second half into the end of the target area.
-  _mergeSort(list, keyOf, compare, middle, end, target, targetMiddle);
+  _mergeSort(elements, keyOf, compare, middle, end, target, targetMiddle);
   // Sort the first half into the end of the source area.
-  _mergeSort(list, keyOf, compare, start, middle, list, middle);
+  _mergeSort(elements, keyOf, compare, start, middle, elements, middle);
   // Merge the two parts into the target area.
-  _merge(keyOf, compare, list, middle, middle + firstLength, target, targetMiddle,
-      targetMiddle + secondLength, target, targetOffset);
+  _merge(keyOf, compare, elements, middle, middle + firstLength, target,
+      targetMiddle, targetMiddle + secondLength, target, targetOffset);
 }
 
 /// Merges two lists into a target list.
@@ -311,7 +349,7 @@ void _mergeSort<E, K>(List<E> list, K keyOf(E element), int Function(K, K) compa
 /// This allows the merge to be stable if the first list contains elements
 /// that started out earlier than the ones in [secondList]
 void _merge<E, K>(
-    K keyOf(E element),
+    K Function(E element) keyOf,
     int Function(K, K) compare,
     List<E> firstList,
     int firstStart,
@@ -356,52 +394,60 @@ void _merge<E, K>(
       targetOffset, targetOffset + (secondEnd - cursor2), secondList, cursor2);
 }
 
-/// Sorts a list range using quicksort.
-void quickSort<E>(List<E> list, int compare(E a, E b), [int start = 0, int end]) {
-  end = RangeError.checkValidRange(start, end, list.length);
-  _quickSort<E, E>(list, _id, compare, Random(), start, end);
+/// Sort [elements] using a quick-sort algorithm.
+///
+/// The elements are compared using [compare] on the elements.
+/// If [start] and [end] are provided, only that range is sorted.
+///
+/// Uses [insertionSortBy] for smaller sublists.
+void quickSort<E>(List<E> elements, int Function(E a, E b) compare,
+    [int start = 0, int end]) {
+  end = RangeError.checkValidRange(start, end, elements.length);
+  _quickSort<E, E>(elements, identity, compare, Random(), start, end);
 }
 
-E _id<E>(E value) => value;
-
-void quickSortBy<E, K>(List<E> list, K keyOf(E element), int compare(K a, K b), [int start = 0, int end]) {
+/// Sort [elements] using a merge-sort algorithm.
+///
+/// The elements are compared using [compare] on the value provided by [keyOf]
+/// on the element.
+/// If [start] and [end] are provided, only that range is sorted.
+///
+/// Uses [insertionSortBy] for smaller sublists.
+void quickSortBy<E, K>(
+    List<E> list, K Function(E element) keyOf, int Function(K a, K b) compare,
+    [int start = 0, int end]) {
   end = RangeError.checkValidRange(start, end, list.length);
   _quickSort(list, keyOf, compare, Random(), start, end);
 }
 
-void _quickSort<E, K>(List<E> list, K keyOf(E element), int compare(K a, K b), Random random, int start, int end) {
+void _quickSort<E, K>(List<E> list, K Function(E element) keyOf,
+    int Function(K a, K b) compare, Random random, int start, int end) {
   const minQuickSortLength = 24;
   var length = end - start;
   while (length >= minQuickSortLength) {
     var pivotIndex = random.nextInt(length) + start;
     var pivot = list[pivotIndex];
     var pivotKey = keyOf(pivot);
-    list[pivotIndex] = list[start];
-    list[start] = pivot;
     var endSmaller = start;
-    var endPivots = start + 1;
     var startGreater = end;
-    outer:
-    while (endPivots < startGreater) {
-      var next = list[endPivots];
-      var rel = compare(keyOf(next), pivotKey);
-      while (rel > 0) {
-        startGreater--;
-        if (startGreater == endPivots) break outer;
-        var tmp = list[startGreater];
-        list[startGreater] = next;
-        next = tmp;
-        rel = compare(keyOf(next), pivotKey);
-      }
+    var startPivots = end - 1;
+    list[pivotIndex] = list[startPivots];
+    list[startPivots] = pivot;
+    while (endSmaller < startPivots) {
+      var current = list[endSmaller];
+      var rel = compare(keyOf(current), pivotKey);
       if (rel < 0) {
-        // Add at end of start..endSmaller.
-        list[endPivots] = list[endSmaller];
-        list[endSmaller] = next;
         endSmaller++;
-        endPivots++;
       } else {
-        // Include in endSmaller..endPivots.
-        endPivots++;
+        startPivots--;
+        var currentTarget = startPivots;
+        list[endSmaller] = list[startPivots];
+        if (rel > 0) {
+          startGreater--;
+          currentTarget = startGreater;
+          list[startPivots] = list[startGreater];
+        }
+        list[currentTarget] = current;
       }
     }
     if (endSmaller - start < end - startGreater) {
