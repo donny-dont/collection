@@ -2,7 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-export 'src/algorithms.dart';
+export 'src/algorithms.dart'
+    show binarySearch, insertionSort, lowerBound, mergeSort, shuffle, reverse;
 export 'src/canonicalized_map.dart';
 export 'src/combined_wrappers/combined_iterable.dart';
 export 'src/combined_wrappers/combined_list.dart';

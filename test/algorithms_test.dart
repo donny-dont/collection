@@ -6,6 +6,7 @@
 import 'dart:math';
 
 import 'package:collection/collection.dart';
+import 'package:collection/src/algorithms.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -154,7 +155,8 @@ void main() {
     expect(lowerBound(l2, C(5), compare: compareC), equals(1));
   });
 
- void testSort(String name, void sort(List<int> elements, [int start, int end])) {
+  void testSort(
+      String name, void Function(List<int> elements, [int start, int end]) sort) {
     test('${name}Random', () {
       var random = Random();
       for (var i = 0; i < 250; i += 10) {
@@ -193,24 +195,26 @@ void main() {
       expect(l, equals([0, 0, 3, 3, 6, 6]));
     });
   }
+
   int intId(int x) => x;
   int intCompare(int a, int b) => a - b;
-  testSort("insertionSort", (list, [start, end]) {
+  testSort('insertionSort', (list, [start, end]) {
     insertionSortBy(list, intId, intCompare, start ?? 0, end ?? list.length);
   });
-  testSort("mergeSort compare", (list, [start, end]) {
-    mergeSort(list, start: start ?? 0, end: end ?? list.length, compare: intCompare);
+  testSort('mergeSort compare', (list, [start, end]) {
+    mergeSort(list,
+        start: start ?? 0, end: end ?? list.length, compare: intCompare);
   });
-  testSort("mergeSort comparable", (list, [start, end]) {
+  testSort('mergeSort comparable', (list, [start, end]) {
     mergeSort(list, start: start ?? 0, end: end ?? list.length);
   });
-  testSort("mergeSortBy", (list, [start, end]) {
+  testSort('mergeSortBy', (list, [start, end]) {
     mergeSortBy(list, intId, intCompare, start ?? 0, end ?? list.length);
   });
-  testSort("quickSort", (list, [start, end]) {
+  testSort('quickSort', (list, [start, end]) {
     quickSort(list, intCompare, start ?? 0, end ?? list.length);
   });
-  testSort("quickSortBy", (list, [start, end]) {
+  testSort('quickSortBy', (list, [start, end]) {
     quickSortBy(list, intId, intCompare, start ?? 0, end ?? list.length);
   });
   test('MergeSortSpecialCases', () {
@@ -254,6 +258,55 @@ void main() {
       }
     }
   });
+
+  void testSortBy(
+      String name,
+      void Function<T, K>(
+          List<T> elements, K Function(T element) keyOf, int Function(K a, K b) compare,
+          [int start, int end]) sort) {
+    for (var n in [0, 1, 2, 10, 75, 250]) {
+      var name2 = name;
+      test('$name2: Same #$n', () {
+        var list = List<OC>.generate(n, (i) => OC(i, 0));
+        // Should succeed. Bad implementations of, e.g., quicksort can diverge.
+        sort(list, ocOrder, compareInt);
+      });
+      test('$name: Pre-sorted #$n', () {
+        var list = List<OC>.generate(n, (i) => OC(-i, i));
+        var expected = list.toList();
+        sort(list, ocOrder, compareInt);
+        // Elements have not moved.
+        expect(list, expected);
+      });
+      test('$name: Reverse-sorted #$n', () {
+        var list = List<OC>.generate(n, (i) => OC(i, -i));
+        sort(list, ocOrder, compareInt);
+        expectSorted(list, ocOrder, compareInt);
+      });
+      test('$name: Random #$n', () {
+        var random = Random();
+        var list = List<OC>.generate(n, (i) => OC(i, random.nextInt(n)));
+        sort(list, ocOrder, compareInt);
+        expectSorted(list, ocOrder, compareInt);
+      });
+      test('$name: Sublist #$n', () {
+        var random = Random();
+        var list = List<OC>.generate(n, (i) => OC(i, random.nextInt(n)));
+        var original = list.toList();
+        var start = n ~/ 4;
+        var end = start * 3;
+        sort(list, ocOrder, compareInt, start, end);
+        expectSorted(list, ocOrder, compareInt, start, end);
+        expect(list.sublist(0, start), original.sublist(0, start));
+        expect(list.sublist(end), original.sublist(end));
+      });
+    }
+  }
+
+  testSortBy('insertionSort', insertionSortBy);
+  testSortBy('mergeSort', mergeSortBy);
+  testSortBy('quickSortBy', quickSortBy);
+
   test('MergeSortPreservesOrder', () {
     var random = Random();
     // Small case where only insertion call is called,
@@ -320,13 +373,35 @@ class C {
 }
 
 int compareC(C one, C other) => one.id - other.id;
+int cId(C c) => c.id;
 
+/// Class naturally ordered by its first constructor argument.
 class OC implements Comparable<OC> {
   final int id;
   final int order;
   OC(this.id, this.order);
+
   @override
   int compareTo(OC other) => id - other.id;
+
   @override
   String toString() => 'OC[$id,$order]';
+}
+
+int ocId(OC oc) => oc.id;
+int ocOrder(OC oc) => oc.order;
+
+int compareInt(int a, int b) => a - b;
+
+/// Check that a list is sorted according to [compare] of [keyOf] of elements.
+void expectSorted<T, K>(List<T> list, K Function(T element) keyOf, int Function(K a, K b) compare,
+    [int start = 0, int end]) {
+  end ??= list.length;
+  if (start == end) return;
+  var prev = keyOf(list[start]);
+  for (var i = start + 1; i < end; i++) {
+    var next = keyOf(list[i]);
+    expect(compare(prev, next), isNonPositive);
+    prev = next;
+  }
 }
