@@ -6,10 +6,14 @@ import 'dart:collection';
 
 import 'unmodifiable_wrappers.dart';
 
+// TODO(lrn): Use UnmodifiableSetMixin here.
 /// An unmodifiable, empty set that can have a const constructor.
 class EmptyUnmodifiableSet<E> extends IterableBase<E>
-    with UnmodifiableSetMixin<E>
     implements UnmodifiableSetView<E> {
+  static T _throw<T>() {
+    throw UnsupportedError('Cannot modify an unmodifiable Set');
+  }
+
   @override
   Iterator<E> get iterator => Iterable<E>.empty().iterator;
   @override
@@ -43,4 +47,21 @@ class EmptyUnmodifiableSet<E> extends IterableBase<E>
   Set<E> intersection(Set<Object> other) => {};
   @override
   Set<E> difference(Set<Object> other) => {};
+
+  @override
+  bool add(E value) => _throw();
+  @override
+  void addAll(Iterable<E> elements) => _throw();
+  @override
+  void clear() => _throw();
+  @override
+  bool remove(Object element) => _throw();
+  @override
+  void removeAll(Iterable<Object> elements) => _throw();
+  @override
+  void removeWhere(bool Function(E) test) => _throw();
+  @override
+  void retainWhere(bool Function(E) test) => _throw();
+  @override
+  void retainAll(Iterable<Object> elements) => _throw();
 }
