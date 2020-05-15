@@ -132,7 +132,7 @@ extension ListExtensions<E> on List<E> {
   }
 
   /// Expands each element and index to a number of elements in a new iterable.
-  Iterable<R> expendIndexed<R>(
+  Iterable<R> expandIndexed<R>(
       Iterable<R> Function(int index, E element) expend) sync* {
     var index = 0;
     for (var element in this) {
@@ -210,7 +210,7 @@ extension ListExtensions<E> on List<E> {
   /// Whether [other] has the same elements as this list.
   ///
   /// Returns true iff [other] has the same [length]
-  /// as this list, and the elemets of this list and [other]
+  /// as this list, and the elements of this list and [other]
   /// at the same indices are equal according to [equality],
   /// which defaults to using `==`.
   bool equals(List<E> other, [Equality<E> equality = const DefaultEquality()]) {
