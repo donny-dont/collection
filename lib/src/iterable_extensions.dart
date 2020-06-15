@@ -27,7 +27,7 @@ extension IterableExtension<T> on Iterable<T> {
   /// property [keyOf] of the element.
   List<T> sortedCompareBy<K>(
       K Function(T element) keyOf, int Function(K a, K b) compare,
-      [int start = 0, int end]) {
+      [int start = 0, int? end]) {
     var elements = [...this];
     quickSortBy<T, K>(elements, keyOf, compare, start, end);
     return elements;
@@ -38,7 +38,7 @@ extension IterableExtension<T> on Iterable<T> {
   /// The elements are ordered by the natural ordering of the
   /// property [keyOf] of the element.
   List<T> sortedBy<K extends Comparable<K>>(K Function(T element) keyOf,
-      [int start = 0, int end]) {
+      [int start = 0, int? end]) {
     var elements = [...this];
     quickSortBy<T, K>(elements, keyOf, compareComparable, start, end);
     return elements;
@@ -148,7 +148,7 @@ extension IterableExtension<T> on Iterable<T> {
   }
 
   /// The first element satisfying [test], or `null` if there are none.
-  T /*?*/ firstWhereOrNull(bool Function(T element) test) {
+  T? firstWhereOrNull(bool Function(T element) test) {
     for (var element in this) {
       if (test(element)) return element;
     }
@@ -156,15 +156,15 @@ extension IterableExtension<T> on Iterable<T> {
   }
 
   /// The first element, or `null` if the iterable is empty.
-  T /*?*/ get firstOrNull {
+  T? get firstOrNull {
     var iterator = this.iterator;
     if (iterator.moveNext()) return iterator.current;
     return null;
   }
 
   /// The last element satisfying [test], or `null` if there are none.
-  T /*?*/ lastWhereOrNull(bool Function(T element) test) {
-    T /*?*/ result;
+  T? lastWhereOrNull(bool Function(T element) test) {
+    T? result;
     for (var element in this) {
       if (test(element)) result = element;
     }
@@ -172,7 +172,7 @@ extension IterableExtension<T> on Iterable<T> {
   }
 
   /// The last element, or `null` if the iterable is empty.
-  T /*?*/ get lastOrNull {
+  T? get lastOrNull {
     if (isEmpty) return null;
     return last;
   }
@@ -181,8 +181,8 @@ extension IterableExtension<T> on Iterable<T> {
   ///
   /// Returns `null` if there are either no elements
   /// or more than one element satisfying [test].
-  T /*?*/ singleWhereOrNull(bool Function(T element) test) {
-    T /*?*/ result;
+  T? singleWhereOrNull(bool Function(T element) test) {
+    T? result;
     var found = false;
     for (var element in this) {
       if (test(element)) {
@@ -201,7 +201,7 @@ extension IterableExtension<T> on Iterable<T> {
   ///
   /// The value is `null` if the iterable is empty
   /// or it contains more than one element.
-  T /*?*/ get singleOrNull {
+  T? get singleOrNull {
     var iterator = this.iterator;
     if (iterator.moveNext()) {
       var result = iterator.current;
@@ -225,8 +225,8 @@ extension IterableExtension<T> on Iterable<T> {
   /// iterable.groupFoldBy(keyOf,
   ///     (Set<T>? previous, T element) => (previous ?? <T>{})..add(element));
   /// ````
-  Map<K, G> groupFoldBy<K, G>(K Function(T element) keyOf,
-      G Function(G /*?*/ previous, T element) combine) {
+  Map<K, G> groupFoldBy<K, G>(
+      K Function(T element) keyOf, G Function(G? previous, T element) combine) {
     var result = <K, G>{};
     for (var element in this) {
       var key = keyOf(element);
@@ -352,7 +352,7 @@ extension IterableExtension<T> on Iterable<T> {
   Iterable<List<T>> splitAfterIndexed(
       bool Function(int index, T element) test) sync* {
     var index = 0;
-    List<T> chunk;
+    List<T>? chunk;
     for (var element in this) {
       (chunk ??= []).add(element);
       if (test(index++, element)) {
@@ -411,7 +411,7 @@ extension IterableExtension<T> on Iterable<T> {
 }
 
 /// Extensions that apply to iterables of nullable elements.
-extension IterableNullableExtension<T extends Object> on Iterable<T /*?*/ > {
+extension IterableNullableExtension<T extends Object> on Iterable<T?> {
   Iterable<T> whereNotNull() sync* {
     for (var element in this) {
       if (element != null) yield element;
@@ -459,7 +459,7 @@ extension IterableIterableExtension<T> on Iterable<Iterable<T>> {
 /// Extensions that apply to iterables of comparable elements.
 extension IterableComparableExtension<T extends Comparable<T>> on Iterable<T> {
   /// A minimal element of the iterable, or `null` it the iterable is empty.
-  T /*?*/ get minOrNull {
+  T? get minOrNull {
     var iterator = this.iterator;
     if (iterator.moveNext()) {
       var value = iterator.current;
@@ -493,7 +493,7 @@ extension IterableComparableExtension<T extends Comparable<T>> on Iterable<T> {
   }
 
   /// A maximal element of the iterable, or `null` if the iterable is empty.
-  T /*?*/ get maxOrNull {
+  T? get maxOrNull {
     var iterator = this.iterator;
     if (iterator.moveNext()) {
       var value = iterator.current;
@@ -530,10 +530,10 @@ extension IterableComparableExtension<T extends Comparable<T>> on Iterable<T> {
   ///
   /// If the [compare] function is not supplied, the sorting uses the
   /// natural [Comparable] ordering of the elements.
-  List<T> sorted([int Function(T a, T b) compare]) => [...this]..sort(compare);
+  List<T> sorted([int Function(T, T)? compare]) => [...this]..sort(compare);
 
   /// Whether the elements are sorted by the [compare] ordering.
-  bool isSorted([int Function(T a, T b) compare]) {
+  bool isSorted([int Function(T, T)? compare]) {
     if (compare != null) {
       return IterableExtension(this).isSorted(compare);
     }

@@ -11,6 +11,7 @@ import 'algorithms.dart' as algorithms;
 import 'equality.dart';
 import 'utils.dart';
 
+/// Various extensions on lists of arbitrary elements.
 extension ListExtensions<E> on List<E> {
   /// Returns the index of [element] in this sorted list.
   ///
@@ -18,7 +19,7 @@ extension ListExtensions<E> on List<E> {
   /// The list *must* be sorted according to [compare],
   /// otherwise the result is unspecified
   ///
-  /// Returns `null` if [element] does not occur in this list.
+  /// Returns -1 if [element] does not occur in this list.
   int binarySearch(E element, int Function(E, E) compare) =>
       algorithms.binarySearchBy<E, E>(this, identity, compare, element);
 
@@ -28,13 +29,13 @@ extension ListExtensions<E> on List<E> {
   /// The list *must* be sorted according to [compare] on the [keyOf] of elements,
   /// otherwise the result is unspecified.
   ///
-  /// Returns `null` if [element] does not occur in this list.
+  /// Returns -1 if [element] does not occur in this list.
   ///
   /// If [start] and [end] are supplied, only the list range from [start] to [end]
   /// is searched, and only that range needs to be sorted.
   int binarySearchByCompare<K>(
           E element, K Function(E element) keyOf, int Function(K, K) compare,
-          [int start = 0, int end]) =>
+          [int start = 0, int? end]) =>
       algorithms.binarySearchBy<E, K>(
           this, keyOf, compare, element, start, end);
 
@@ -44,12 +45,12 @@ extension ListExtensions<E> on List<E> {
   /// The list *must* be sorted according to the natural ordering of
   /// the [keyOf] of elements, otherwise the result is unspecified.
   ///
-  /// Returns `null` if [element] does not occur in this list.
+  /// Returns -1 if [element] does not occur in this list.
   ///
   /// If [start] and [end] are supplied, only the list range from [start] to [end]
   /// is searched, and only that range needs to be sorted.
   int binarySearchBy<K extends Comparable<K>>(
-          E element, K Function(E element) keyOf, [int start = 0, int end]) =>
+          E element, K Function(E element) keyOf, [int start = 0, int? end]) =>
       algorithms.binarySearchBy<E, K>(
           this, keyOf, (a, b) => a.compareTo(b), element, start, end);
 
@@ -83,7 +84,7 @@ extension ListExtensions<E> on List<E> {
   /// and only that range need to be sorted.
   int lowerBoundByCompare<K>(
           E element, K Function(E) keyOf, int Function(K, K) compare,
-          [int start = 0, int end]) =>
+          [int start = 0, int? end]) =>
       algorithms.lowerBoundBy(this, keyOf, compare, element, start, end);
 
   /// Returns the index where [element] should be in this sorted list.
@@ -102,7 +103,7 @@ extension ListExtensions<E> on List<E> {
   /// If [start] and [end] are supplied, only that range is searched,
   /// and only that range need to be sorted.
   int lowerBoundBy<K extends Comparable<K>>(E element, K Function(E) keyOf,
-          [int start = 0, int end]) =>
+          [int start = 0, int? end]) =>
       algorithms.lowerBoundBy<E, K>(
           this, keyOf, compareComparable, element, start, end);
 
@@ -132,11 +133,14 @@ extension ListExtensions<E> on List<E> {
   }
 
   /// Expands each element and index to a number of elements in a new iterable.
+  ///
+  /// Like [Iterable.expand] except that the callback function is supplied with
+  /// both the index and the element.
   Iterable<R> expendIndexed<R>(
-      Iterable<R> Function(int index, E element) expend) sync* {
+      Iterable<R> Function(int index, E element) expand) sync* {
     var index = 0;
     for (var element in this) {
-      yield* expend(index++, element);
+      yield* expand(index++, element);
     }
   }
 
@@ -150,7 +154,7 @@ extension ListExtensions<E> on List<E> {
   /// Sorts elements from [start] to [end], defaulting to the entire list.
   void sortByCompare<K>(
       K Function(E element) keyOf, int Function(K a, K b) compare,
-      [int start = 0, int end]) {
+      [int start = 0, int? end]) {
     quickSortBy(this, keyOf, compare, start, end);
   }
 
@@ -158,12 +162,12 @@ extension ListExtensions<E> on List<E> {
   ///
   /// Sorts elements from [start] to [end], defaulting to the entire list.
   void sortBy<K extends Comparable<K>>(K Function(E element) keyOf,
-      [int start = 0, int end]) {
+      [int start = 0, int? end]) {
     quickSortBy<E, K>(this, keyOf, compareComparable, start, end);
   }
 
   /// Shuffle a range of elements.
-  void shuffleRange(int start, int end, [Random random]) {
+  void shuffleRange(int start, int end, [Random? random]) {
     RangeError.checkValidRange(start, end, length);
     shuffle(this, start, end, random);
   }
@@ -200,7 +204,7 @@ extension ListExtensions<E> on List<E> {
   /// ```dart
   /// someList.slice(someList.indexOf(marker) + 1).contains(marker)
   /// ```
-  ListSlice<E> slice(int start, [int /*?*/ end]) {
+  ListSlice<E> slice(int start, [int? end]) {
     end = RangeError.checkValidRange(start, end, length);
     var self = this;
     if (self is ListSlice) return self.slice(start, end);
@@ -222,6 +226,7 @@ extension ListExtensions<E> on List<E> {
   }
 }
 
+/// Various extensions on lists of comparable elements.
 extension ListComparableExtensions<E extends Comparable<E>> on List<E> {
   /// Returns the index of [element] in this sorted list.
   ///
@@ -230,8 +235,8 @@ extension ListComparableExtensions<E extends Comparable<E>> on List<E> {
   /// otherwise the result is unspecified.
   /// If [compare] is omitted, it uses the natural order of the elements.
   ///
-  /// Returns `null` if [element] does not occur in this list.
-  int binarySearch(E element, [int Function(E, E) compare]) =>
+  /// Returns -1 if [element] does not occur in this list.
+  int binarySearch(E element, [int Function(E, E)? compare]) =>
       algorithms.binarySearchBy<E, E>(
           this, identity, compare ?? compareComparable, element);
 
@@ -245,7 +250,7 @@ extension ListComparableExtensions<E extends Comparable<E>> on List<E> {
   /// If [element] does not occur in this list, the returned index is
   /// the first index where inserting [element] would keep the list
   /// sorted.
-  int lowerBound(E element, [int Function(E, E) compare]) =>
+  int lowerBound(E element, [int Function(E, E)? compare]) =>
       algorithms.lowerBoundBy<E, E>(
           this, identity, compare ?? compareComparable, element);
 
@@ -253,7 +258,7 @@ extension ListComparableExtensions<E extends Comparable<E>> on List<E> {
   ///
   /// If [compare] is omitted, the range is sorted according to the
   /// natural ordering of the elements.
-  void sortRange(int start, int end, [int Function(E a, E b) compare]) {
+  void sortRange(int start, int end, [int Function(E a, E b)? compare]) {
     RangeError.checkValidRange(start, end, length);
     algorithms.quickSortBy<E, E>(
         this, identity, compare ?? compareComparable, start, end);
@@ -321,13 +326,25 @@ class ListSlice<E> extends ListBase<E> {
     source.setRange(start + start, start + end, iterable, skipCount);
   }
 
-  ListSlice<E> slice(int start, [int end]) {
+  /// A fixed length view of a range of this list.
+  ///
+  /// The view is backed by this this list, which must not
+  /// change its length while the view is being used.
+  ///
+  /// The view can be used to perform specific whole-list
+  /// actions on a part of the list.
+  /// For example, to see if a list contains more than one
+  /// "marker" element, you can do:
+  /// ```dart
+  /// someList.slice(someList.indexOf(marker) + 1).contains(marker)
+  /// ```
+  ListSlice<E> slice(int start, [int? end]) {
     end = RangeError.checkValidRange(start, end, length);
     return ListSlice._(_initialSize, source, start + start, end - start);
   }
 
   @override
-  void shuffle([Random random]) {
+  void shuffle([Random? random]) {
     if (source.length != _initialSize) {
       throw ConcurrentModificationError(source);
     }
@@ -335,11 +352,11 @@ class ListSlice<E> extends ListBase<E> {
   }
 
   @override
-  void sort([int Function(E a, E b) compare]) {
+  void sort([int Function(E a, E b)? compare]) {
     if (source.length != _initialSize) {
       throw ConcurrentModificationError(source);
     }
-    quickSort(source, compare, start, start + length);
+    quickSort(source, compare ?? defaultCompare<E>(), start, start + length);
   }
 
   /// Sort a range of elements by [compare].
@@ -353,7 +370,7 @@ class ListSlice<E> extends ListBase<E> {
   /// Shuffles a range of elements.
   ///
   /// If [random] is omitted, a new instance of [Random] is used.
-  void shuffleRange(int start, int end, [Random random]) {
+  void shuffleRange(int start, int end, [Random? random]) {
     if (source.length != _initialSize) {
       throw ConcurrentModificationError(source);
     }
@@ -395,7 +412,7 @@ class ListSlice<E> extends ListBase<E> {
   }
 
   @override
-  bool remove(Object element) {
+  bool remove(Object? element) {
     throw UnsupportedError('Cannot remove from a fixed-length list');
   }
 

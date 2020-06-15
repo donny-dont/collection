@@ -18,9 +18,9 @@ import 'utils.dart';
 /// the objects. If any object is not [Comparable], this throws a [TypeError]
 /// (`CastError` on some SDK versions).
 ///
-/// Returns -1 if [value] is not in the list by default.
+/// Returns -1 if [value] is not in the list.
 int binarySearch<E>(List<E> sortedList, E value,
-        {int Function(E, E) compare}) =>
+        {int Function(E, E)? compare}) =>
     binarySearchBy<E, E>(
         sortedList, identity, compare ?? defaultCompare<E>(), value);
 
@@ -35,7 +35,7 @@ int binarySearch<E>(List<E> sortedList, E value,
 /// and only that range need to be sorted.
 int binarySearchBy<E, K>(List<E> sortedList, K Function(E element) keyOf,
     int Function(K, K) compare, E value,
-    [int start = 0, int end]) {
+    [int start = 0, int? end]) {
   end = RangeError.checkValidRange(start, end, sortedList.length);
   var min = start;
   var max = end;
@@ -82,7 +82,7 @@ int lowerBound<E>(List<E> sortedList, E value, {int Function(E, E)? compare}) =>
 /// and only that range need to be sorted.
 int lowerBoundBy<E, K>(List<E> sortedList, K Function(E element) keyOf,
     int Function(K, K) compare, E value,
-    [int start = 0, int end]) {
+    [int start = 0, int? end]) {
   end = RangeError.checkValidRange(start, end, sortedList.length);
   var min = start;
   var max = end;
@@ -122,13 +122,13 @@ void shuffle(List elements, [int start = 0, int? end, Random? random]) {
 }
 
 /// Reverses a list, or a part of a list, in-place.
-void reverse(List elements, [int start = 0, int? end]) {
+void reverse<E>(List<E> elements, [int start = 0, int? end]) {
   end = RangeError.checkValidRange(start, end, elements.length);
-  _reverse(elements, start, end);
+  _reverse<E>(elements, start, end);
 }
 
 /// Internal helper function that assumes valid arguments.
-void _reverse(List elements, int start, int end) {
+void _reverse<E>(List<E> elements, int start, int end) {
   for (var i = start, j = end - 1; i < j; i++, j--) {
     var tmp = elements[i];
     elements[i] = elements[j];
@@ -153,7 +153,7 @@ void _reverse(List elements, int start, int end) {
 /// This insertion sort is stable: Equal elements end up in the same order
 /// as they started in.
 void insertionSort<E>(List<E> elements,
-    {int Function(E, E) compare, int start = 0, int? end}) {
+    {int Function(E, E)? compare, int start = 0, int? end}) {
   // If the same method could have both positional and named optional
   // parameters, this should be (list, [start, end], {compare}).
   compare ??= defaultCompare<E>();
@@ -264,7 +264,7 @@ void mergeSortBy<E, K>(List<E> elements, K Function(E element) keyOf,
   var firstLength = middle - start;
   var secondLength = end - middle;
   // secondLength is always the same as firstLength, or one greater.
-  var scratchSpace = List<E>(secondLength);
+  var scratchSpace = List<E>.filled(secondLength, elements[start]);
   _mergeSort(elements, keyOf, compare, middle, end, scratchSpace, 0);
   var firstTarget = end - firstLength;
   _mergeSort(elements, keyOf, compare, start, middle, elements, firstTarget);
@@ -401,7 +401,7 @@ void _merge<E, K>(
 ///
 /// Uses [insertionSortBy] for smaller sublists.
 void quickSort<E>(List<E> elements, int Function(E a, E b) compare,
-    [int start = 0, int end]) {
+    [int start = 0, int? end]) {
   end = RangeError.checkValidRange(start, end, elements.length);
   _quickSort<E, E>(elements, identity, compare, Random(), start, end);
 }
@@ -415,7 +415,7 @@ void quickSort<E>(List<E> elements, int Function(E a, E b) compare,
 /// Uses [insertionSortBy] for smaller sublists.
 void quickSortBy<E, K>(
     List<E> list, K Function(E element) keyOf, int Function(K a, K b) compare,
-    [int start = 0, int end]) {
+    [int start = 0, int? end]) {
   end = RangeError.checkValidRange(start, end, list.length);
   _quickSort(list, keyOf, compare, Random(), start, end);
 }

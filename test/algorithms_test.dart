@@ -156,7 +156,7 @@ void main() {
   });
 
   void testSort(String name,
-      void Function(List<int> elements, [int start, int end]) sort) {
+      void Function(List<int> elements, [int? start, int? end]) sort) {
     test('${name}Random', () {
       var random = Random();
       for (var i = 0; i < 250; i += 10) {
@@ -397,7 +397,7 @@ int compareInt(int a, int b) => a - b;
 /// Check that a list is sorted according to [compare] of [keyOf] of elements.
 void expectSorted<T, K>(
     List<T> list, K Function(T element) keyOf, int Function(K a, K b) compare,
-    [int start = 0, int end]) {
+    [int start = 0, int? end]) {
   end ??= list.length;
   if (start == end) return;
   var prev = keyOf(list[start]);
