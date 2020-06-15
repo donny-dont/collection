@@ -58,8 +58,7 @@ extension IterableExtension<T> on Iterable<T> {
   }
 
   /// Whether the elements are sorted by the [compare] ordering of [keyOf].
-  bool isSortedBy<K>(
-      K Function(T element) keyOf, int Function(K, K) compare) {
+  bool isSortedBy<K>(K Function(T element) keyOf, int Function(K, K) compare) {
     var iterator = this.iterator;
     if (!iterator.moveNext()) return true;
     var previousKey = keyOf(iterator.current);
@@ -138,7 +137,8 @@ extension IterableExtension<T> on Iterable<T> {
   ///
   /// Returns the result of the last call to [combine],
   /// or [initialValue] if there are no elements.
-  R foldIndexed<R>(R initialValue, R Function(int index , R previous, T element) combine) {
+  R foldIndexed<R>(
+      R initialValue, R Function(int index, R previous, T element) combine) {
     var result = initialValue;
     var index = 0;
     for (var element in this) {
