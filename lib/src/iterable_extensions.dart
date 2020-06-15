@@ -45,7 +45,7 @@ extension IterableExtension<T> on Iterable<T> {
   }
 
   /// Whether the elements are sorted by the [compare] ordering.
-  bool isSorted(int Function(T a, T b) compare) {
+  bool isSorted(int Function(T, T) compare) {
     var iterator = this.iterator;
     if (!iterator.moveNext()) return true;
     var previousElement = iterator.current;
@@ -59,7 +59,7 @@ extension IterableExtension<T> on Iterable<T> {
 
   /// Whether the elements are sorted by the [compare] ordering of [keyOf].
   bool isSortedBy<K>(
-      K Function(T element) keyOf, int Function(K a, K b) compare) {
+      K Function(T element) keyOf, int Function(K, K) compare) {
     var iterator = this.iterator;
     if (!iterator.moveNext()) return true;
     var previousKey = keyOf(iterator.current);
@@ -240,7 +240,7 @@ extension IterableExtension<T> on Iterable<T> {
     var result = <K, Set<T>>{};
     for (var element in this) {
       var key = keyOf(element);
-      result[key] = (result[key] ?? {})..add(element);
+      result[key] = (result[key] ?? <T>{})..add(element);
     }
     return result;
   }
