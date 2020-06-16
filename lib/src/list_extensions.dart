@@ -356,7 +356,8 @@ class ListSlice<E> extends ListBase<E> {
     if (source.length != _initialSize) {
       throw ConcurrentModificationError(source);
     }
-    quickSort(source, compare ?? defaultCompare<E>(), start, start + length);
+    compare ??= defaultCompare;
+    quickSort(source, compare, start, start + length);
   }
 
   /// Sort a range of elements by [compare].

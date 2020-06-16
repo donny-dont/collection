@@ -427,7 +427,7 @@ extension IterableNumberExtension<T extends num> on Iterable<T> {
   T sum() {
     var result = (0.5 is T ? 0.0 : 0) as T;
     for (var value in this) {
-      result += value;
+      result = (result + value) as T;
     }
     return result;
   }

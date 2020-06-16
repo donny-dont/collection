@@ -20,9 +20,11 @@ import 'utils.dart';
 ///
 /// Returns -1 if [value] is not in the list.
 int binarySearch<E>(List<E> sortedList, E value,
-        {int Function(E, E)? compare}) =>
-    binarySearchBy<E, E>(
-        sortedList, identity, compare ?? defaultCompare<E>(), value);
+        {int Function(E, E)? compare}) {
+  compare ??= defaultCompare;
+  return binarySearchBy<E, E>(
+      sortedList, identity, compare, value);
+}
 
 /// Returns a position of the [value] in [sortedList], if it is there.
 ///
@@ -66,9 +68,11 @@ int binarySearchBy<E, K>(List<E> sortedList, K Function(E element) keyOf,
 ///
 /// Returns [sortedList.length] if all the items in [sortedList] compare less
 /// than [value].
-int lowerBound<E>(List<E> sortedList, E value, {int Function(E, E)? compare}) =>
-    lowerBoundBy<E, E>(
-        sortedList, identity, compare ?? defaultCompare<E>(), value);
+int lowerBound<E>(List<E> sortedList, E value, {int Function(E, E)? compare}) {
+    compare ??= defaultCompare;
+    return lowerBoundBy<E, E>(
+        sortedList, identity, compare, value);
+}
 
 /// Returns the first position in [sortedList] that is not before [value].
 ///
@@ -156,7 +160,7 @@ void insertionSort<E>(List<E> elements,
     {int Function(E, E)? compare, int start = 0, int? end}) {
   // If the same method could have both positional and named optional
   // parameters, this should be (list, [start, end], {compare}).
-  compare ??= defaultCompare<E>();
+  compare ??= defaultCompare;
   end ??= elements.length;
 
   for (var pos = start + 1; pos < end; pos++) {
@@ -210,7 +214,7 @@ const int _mergeSortLimit = 32;
 void mergeSort<E>(List<E> elements,
     {int start = 0, int? end, int Function(E, E)? compare}) {
   end = RangeError.checkValidRange(start, end, elements.length);
-  compare ??= defaultCompare<E>();
+  compare ??= defaultCompare;
 
   var length = end - start;
   if (length < 2) return;
